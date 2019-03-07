@@ -121,6 +121,43 @@ function browse_Callback(hObject, eventdata, handles)
 % hObject    handle to browse (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+if get(handles.browse, 'value') == 1   
+    [FileName,FilePath]= uigetfile('*.*');
+    FileName
+    if any(regexp(FileName , '.mp3$')) | any(regexp(FileName, '.wav$'))
+        if any(regexp(FileName, '.mp3$'))
+            set(handles.SigType, 'string', 'mp3 File');
+        else
+            set(handles.SigType, 'string', 'wav file');
+        end
+        ExPath = fullfile(FilePath, FileName);
+        var = importdata(ExPath);
+        handles.signal = var.data; %handles.signal is the signal we're gonna compress.
+        plot(var.data)
+    else if any(regexp(FileName, '.mat$'))
+            set(handles.SigType, 'string', 'mat File');
+            ExPath = fullfile(FilePath, FileName);
+            var = importdata(ExPath);
+            handles.signal = var(1,:); %handles.signal is the signal we're gonna compress.
+            plot(var(1,:))
+        else if any(regexp(FileName, '.dat$'))
+                set(handles.SigType, 'string', 'dat File');
+                fid=fopen(FileName,'r');
+                time=10;
+                f=fread(fid,2*360*time,'ubit12');
+                Orig_Sig=f(1:2:length(f));
+                handles.signal = Orig_Sig; %handles.signal is the signal we're gonna compress.
+                plot(Orig_Sig)
+            else
+                set(handles.SigType, 'string', 'Not A Signal');
+            end
+        end
+    end
+end
+guidata(hObject, handles);
+
+
+
 
 
 
