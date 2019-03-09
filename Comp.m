@@ -22,7 +22,7 @@ function varargout = Comp(varargin)
 
 % Edit the above text to modify the response to help Comp
 
-% Last Modified by GUIDE v2.5 04-Mar-2019 22:20:35
+% Last Modified by GUIDE v2.5 09-Mar-2019 06:40:06
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -54,7 +54,8 @@ function Comp_OpeningFcn(hObject, eventdata, handles, varargin)
 
 % Choose default command line output for Comp
 handles.output = hObject;
-
+handles.Transform = 'dct';
+handles.compression = 'Lossy';
 % Update handles structure
 guidata(hObject, handles);
 
@@ -79,6 +80,7 @@ function radiobutton1_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
+
 % Hint: get(hObject,'Value') returns toggle state of radiobutton1
 
 
@@ -100,20 +102,18 @@ function dwt_Callback(hObject, eventdata, handles)
 % Hint: get(hObject,'Value') returns toggle state of dwt
 
 
-% --- Executes on button press in dct.
-function dct_Callback(hObject, eventdata, handles)
-% hObject    handle to dct (see GCBO)
+% --- Executes on button press in pca.
+function pca_Callback(~, eventdata, handles)
+% hObject    handle to pca (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hint: get(hObject,'Value') returns toggle state of dct
 
 
-% --- Executes on button press in save.
-function save_Callback(hObject, eventdata, handles)
-% hObject    handle to save (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
+% Hint: get(hObject,'Value') returns toggle state of pca
+
+
+
 
 
 % --- Executes on button press in browse.
@@ -123,7 +123,6 @@ function browse_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 if get(handles.browse, 'value') == 1   
     [FileName,FilePath]= uigetfile('*.*');
-    FileName
     if any(regexp(FileName , '.mp3$')) | any(regexp(FileName, '.wav$'))
         if any(regexp(FileName, '.mp3$'))
             set(handles.SigType, 'string', 'mp3 File');
@@ -133,7 +132,7 @@ if get(handles.browse, 'value') == 1
         ExPath = fullfile(FilePath, FileName);
         var = importdata(ExPath);
         handles.signal = var.data; %handles.signal is the signal we're gonna compress.
-        plot(var.data)
+        plot(var.data);
     else if any(regexp(FileName, '.mat$'))
             set(handles.SigType, 'string', 'mat File');
             ExPath = fullfile(FilePath, FileName);
@@ -147,7 +146,7 @@ if get(handles.browse, 'value') == 1
                 f=fread(fid,2*360*time,'ubit12');
                 Orig_Sig=f(1:2:length(f));
                 handles.signal = Orig_Sig; %handles.signal is the signal we're gonna compress.
-                plot(Orig_Sig)
+                plot(Orig_Sig);
             else
                 set(handles.SigType, 'string', 'Not A Signal');
             end
@@ -181,6 +180,7 @@ function CompRatio_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+guidata(hObject, handles)
 
 
 
@@ -204,3 +204,113 @@ function SigType_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+guidata(hObject, handles)
+
+
+% --- Executes on button press in fft.
+function fft_Callback(hObject, eventdata, handles)
+% hObject    handle to fft (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of fft
+
+
+% --- Executes on key press with focus on pca and none of its controls.
+function pca_KeyPressFcn(hObject, eventdata, handles)
+% hObject    handle to pca (see GCBO)
+% eventdata  structure with the following fields (see UICONTROL)
+%	Key: name of the key that was pressed, in lower case
+%	Character: character interpretation of the key(s) that was pressed
+%	Modifier: name(s) of the modifier key(s) (i.e., control, shift) pressed
+% handles    structure with handles and user data (see GUIDATA)
+
+
+% --- Executes on selection change in popupmenu1.
+function popupmenu1_Callback(hObject, eventdata, handles)
+% hObject    handle to popupmenu1 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+% Hints: contents = cellstr(get(hObject,'String')) returns popupmenu1 contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from popupmenu1
+popChoice= get(handles.popupmenu1,'Value')
+if(popChoice == 1)
+    handles.compression = 'Lossy';
+elseif (popChoice == 2)
+    handles.compression = 'Loseless';
+
+end
+guidata(hObject, handles)
+
+
+% --- Executes during object creation, after setting all properties.
+function popupmenu1_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to popupmenu1 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+guidata(hObject, handles)
+
+
+% --- Executes when selected object is changed in buttonGroup.
+function buttonGroup_SelectionChangeFcn(hObject, eventdata, handles)
+% hObject    handle to the selected object in buttonGroup 
+% eventdata  structure with the following fields (see UIBUTTONGROUP)
+%	EventName: string 'SelectionChanged' (read only)
+%	OldValue: handle of the previously selected object or empty if none was selected
+%	NewValue: handle of the currently selected object
+% handles    structure with handles and user data (see GUIDATA)
+handles.Transform = get(eventdata.NewValue,'Tag');
+
+guidata(hObject, handles)
+
+
+
+
+    
+% --- Executes on button press in save.
+function save_Callback(hObject, eventdata, handles)
+% hObject    handle to save (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+handles = Transformation(handles);
+handles = Encoding(handles);
+
+transformedSignal = handles.transformedSignal;
+%dlmwrite('compressedSignal.txt', handles.transformedSignal);
+save('compressedSignal.mat','transformedSignal')
+%dlmwrite('Transform.txt',handles.Transform,',');
+%dlmwrite('compression.txt',handles.compression,',');
+
+guidata(hObject, handles)
+
+        
+
+
+% --- Executes on button press in decompress.
+function decompress_Callback(hObject, eventdata, handles)
+% hObject    handle to decompress (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+load 'compressedSignal.mat';
+%handles.compression = dlmread('compression.txt',',');
+%handles.Transform = dlmread('Transform.txt',',');
+%disp(handles.compression);
+%disp(handles.Transform);
+handles = Decoding(handles);
+switch(handles.Transform);
+    case 'dct'
+        handles.uncompressedSignal = idct(handles.uncompressedSignal);
+    case 'fft'
+        handles.uncompressedSignal = ifft(handles.uncompressedSignal);
+end
+axes(handles.axes1);
+plot( handles.uncompressedSignal );
+CR = length(handles.signal) / (length(handles.uncompressedSignal)-handles.zeroCounter); 
+set(handles.CR, 'String', CR);
+guidata(hObject, handles)
