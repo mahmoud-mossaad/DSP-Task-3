@@ -99,8 +99,8 @@ for index=1:1:END
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ffty1=ffty;
-for index = 1:1:END
-    if (abs(ffty(index))<25)&(abs(ffty(index))>-25)
+for index = 1:1:length(Sig)
+    if (abs(ffty(index))<threshold)&(abs(ffty(index))>-threshold)
         ffty1(index)=0;
     end
 end

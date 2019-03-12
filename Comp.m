@@ -22,7 +22,7 @@ function varargout = Comp(varargin)
 
 % Edit the above text to modify the response to help Comp
 
-% Last Modified by GUIDE v2.5 09-Mar-2019 06:40:06
+% Last Modified by GUIDE v2.5 10-Mar-2019 20:12:10
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -93,24 +93,24 @@ function radiobutton2_Callback(hObject, eventdata, handles)
 % Hint: get(hObject,'Value') returns toggle state of radiobutton2
 
 
-% --- Executes on button press in dwt.
-function dwt_Callback(hObject, eventdata, handles)
-% hObject    handle to dwt (see GCBO)
+% --- Executes on button press in sym4.
+function sym4_Callback(hObject, eventdata, handles)
+% hObject    handle to sym4 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hint: get(hObject,'Value') returns toggle state of dwt
+% Hint: get(hObject,'Value') returns toggle state of sym4
 
 
-% --- Executes on button press in pca.
-function pca_Callback(~, eventdata, handles)
-% hObject    handle to pca (see GCBO)
+% --- Executes on button press in db4.
+function db4_Callback(~, eventdata, handles)
+% hObject    handle to db4 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
 
 
-% Hint: get(hObject,'Value') returns toggle state of pca
+% Hint: get(hObject,'Value') returns toggle state of db4
 
 
 
@@ -131,14 +131,15 @@ if get(handles.browse, 'value') == 1
         end
         ExPath = fullfile(FilePath, FileName);
         var = importdata(ExPath);
-        handles.signal = var.data; %handles.signal is the signal we're gonna compress.
-        plot(var.data);
-    else if any(regexp(FileName, '.mat$'))
+        handles.signal = var.data(:,1); %handles.signal is the signal we're gonna compress.
+        axes(handles.axes1);
+        %plot(var.data);
+    else if any(regexp(FileName, '.mat$')) | any(regexp(FileName, '.MAT$'))
             set(handles.SigType, 'string', 'mat File');
             ExPath = fullfile(FilePath, FileName);
             var = importdata(ExPath);
             handles.signal = var(1,:); %handles.signal is the signal we're gonna compress.
-            plot(var(1,:))
+            %plot(var(1,:))
         else if any(regexp(FileName, '.dat$'))
                 set(handles.SigType, 'string', 'dat File');
                 fid=fopen(FileName,'r');
@@ -146,12 +147,17 @@ if get(handles.browse, 'value') == 1
                 f=fread(fid,2*360*time,'ubit12');
                 Orig_Sig=f(1:2:length(f));
                 handles.signal = Orig_Sig; %handles.signal is the signal we're gonna compress.
-                plot(Orig_Sig);
+                %plot(Orig_Sig);
             else
                 set(handles.SigType, 'string', 'Not A Signal');
             end
         end
     end
+    axes(handles.axes2);
+    plot(handles.signal);
+    signal = handles.signal;
+    save('signal.mat','signal');
+
 end
 guidata(hObject, handles);
 
@@ -216,9 +222,9 @@ function fft_Callback(hObject, eventdata, handles)
 % Hint: get(hObject,'Value') returns toggle state of fft
 
 
-% --- Executes on key press with focus on pca and none of its controls.
-function pca_KeyPressFcn(hObject, eventdata, handles)
-% hObject    handle to pca (see GCBO)
+% --- Executes on key press with focus on db4 and none of its controls.
+function db4_KeyPressFcn(hObject, eventdata, handles)
+% hObject    handle to db4 (see GCBO)
 % eventdata  structure with the following fields (see UICONTROL)
 %	Key: name of the key that was pressed, in lower case
 %	Character: character interpretation of the key(s) that was pressed
@@ -269,9 +275,6 @@ handles.Transform = get(eventdata.NewValue,'Tag');
 
 guidata(hObject, handles)
 
-
-
-
     
 % --- Executes on button press in save.
 function save_Callback(hObject, eventdata, handles)
@@ -280,16 +283,16 @@ function save_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 handles = Transformation(handles);
 handles = Encoding(handles);
+if(strcmp(handles.Transform, 'dct' ) || strcmp(handles.Transform, 'fft' ))
+    transformedSignal = handles.transformedSignal;
 
-transformedSignal = handles.transformedSignal;
-%dlmwrite('compressedSignal.txt', handles.transformedSignal);
+else 
+    transformedSignal= [handles.cA, handles.cD];
+end
+
 save('compressedSignal.mat','transformedSignal')
-%dlmwrite('Transform.txt',handles.Transform,',');
-%dlmwrite('compression.txt',handles.compression,',');
 
 guidata(hObject, handles)
-
-        
 
 
 % --- Executes on button press in decompress.
@@ -298,19 +301,25 @@ function decompress_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 load 'compressedSignal.mat';
-%handles.compression = dlmread('compression.txt',',');
-%handles.Transform = dlmread('Transform.txt',',');
-%disp(handles.compression);
-%disp(handles.Transform);
+
 handles = Decoding(handles);
 switch(handles.Transform);
     case 'dct'
         handles.uncompressedSignal = idct(handles.uncompressedSignal);
     case 'fft'
+       % handles.uncompressedSignal =[handles.uncompressedSignal flip(handles.uncompressedSignal,2)];
         handles.uncompressedSignal = ifft(handles.uncompressedSignal);
+        handles.uncompressedSignal = real(handles.uncompressedSignal);
+    case 'sym4'
+        handles.uncompressedSignal = idwt(handles.cA, handles.cD,'sym4');
+    case 'db4'
+        handles.uncompressedSignal = idwt(handles.cA, handles.cD,'db4');
 end
 axes(handles.axes1);
 plot( handles.uncompressedSignal );
-CR = length(handles.signal) / (length(handles.uncompressedSignal)-handles.zeroCounter); 
+compressed = dir('compressedSignal.mat');
+signal= dir('signal.mat');
+
+CR = signal.bytes / compressed.bytes; 
 set(handles.CR, 'String', CR);
 guidata(hObject, handles)
