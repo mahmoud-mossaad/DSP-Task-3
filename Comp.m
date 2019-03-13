@@ -156,6 +156,7 @@ if get(handles.browse, 'value') == 1
     axes(handles.axes2);
     plot(handles.signal);
     signal = handles.signal;
+    handles.signal = single(handles.signal);
     save('signal.mat','signal');
 
 end
@@ -239,11 +240,17 @@ function popupmenu1_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 % Hints: contents = cellstr(get(hObject,'String')) returns popupmenu1 contents as cell array
 %        contents{get(hObject,'Value')} returns selected item from popupmenu1
-popChoice= get(handles.popupmenu1,'Value')
-if(popChoice == 1)
+contents = cellstr(get(hObject,'String')) ;
+popChoice= contents(get(handles.popupmenu1,'Value'));
+disp(popChoice);
+
+if(strcmp(popChoice, 'Lossy'))
     handles.compression = 'Lossy';
-elseif (popChoice == 2)
+    disp('lossy');
+end 
+if (strcmp(popChoice,'Loseless'))
     handles.compression = 'Loseless';
+    disp('loseless');
 
 end
 guidata(hObject, handles)
@@ -282,15 +289,24 @@ function save_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 handles = Transformation(handles);
+disp(handles.compression);
 handles = Encoding(handles);
 if(strcmp(handles.Transform, 'dct' ) || strcmp(handles.Transform, 'fft' ))
     transformedSignal = handles.transformedSignal;
-
+    save('compressedSignal.mat','transformedSignal')
 else 
-    transformedSignal= [handles.cA, handles.cD];
+    if(strcmp(handles.compression,'Lossy'))
+        transformedSignal= [handles.cA];
+        save('compressedSignal.mat','transformedSignal')
+    else
+        transformedSignal = [ handles.cA ; handles.cD];
+        transformedSignal = rle(transformedSignal);
+        save('compressedSignal.mat','transformedSignal')
+    end
+    
 end
 
-save('compressedSignal.mat','transformedSignal')
+
 
 guidata(hObject, handles)
 
@@ -300,17 +316,17 @@ function decompress_Callback(hObject, eventdata, handles)
 % hObject    handle to decompress (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-load 'compressedSignal.mat';
-
+load('compressedSignal.mat');
+handles.uncompressedSignal = transformedSignal;
 handles = Decoding(handles);
 switch(handles.Transform);
     case 'dct'
         handles.uncompressedSignal = idct(handles.uncompressedSignal);
     case 'fft'
-       % handles.uncompressedSignal =[handles.uncompressedSignal flip(handles.uncompressedSignal,2)];
         handles.uncompressedSignal = ifft(handles.uncompressedSignal);
         handles.uncompressedSignal = real(handles.uncompressedSignal);
     case 'sym4'
+        
         handles.uncompressedSignal = idwt(handles.cA, handles.cD,'sym4');
     case 'db4'
         handles.uncompressedSignal = idwt(handles.cA, handles.cD,'db4');
